@@ -34,7 +34,7 @@ class WikibaseRestAPI:
                       headers=headers, data=data)
 
         if request.status_code != 200:
-            raise ResponseError
+            raise requests.adapters.ResponseError
 
         try:
             return request.json()
@@ -51,10 +51,10 @@ class WikibaseRestAPI:
     def _put(self, content, data):
         return self._request("PUT", content, data=data)
 
-    def _patch(self, content):
+    def _patch(self, content, data):
         return self._request("PATCH", content, data=data)
 
-    def _delete(self, content):
+    def _delete(self, content, data):
         return self._request("DELETE", content, data=data)
 
     # GET
