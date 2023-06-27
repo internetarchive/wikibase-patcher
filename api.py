@@ -28,15 +28,36 @@ class WikibaseRestAPI:
             self.base_headers["Authorization"] = f"Bearer {self.access_token}"
 
 
-    def _request(self, verb, path, params={}, headers={}, data=None, old_data=None):
+    def _prepare_payload(self, verb, part, new_data, old_data=None, bot=False, edit_summary=None, tags=[]):
+        payload = {
+            "tags": ["wikibase-patcher-v1"],
+            "bot": bot,
+        }
+
+        for tag in tags:
+            payload["tags"].append(tag)
+
+        if edit_summary is not None:
+            payload["comment"] = edit_summary
+
+        if verb.lower() == "patch" and old_data is not None:
+            payload["patch"] = jsonpatch.make_patch(old_data, new_data)
+        elif verb.lower() != "delete":
+            payload[part] = new_data
+
+        return payload
+
+
+    def _request(self, verb, path, params={}, headers={}, payload=None):
         for k, v in self.base_headers.items():
             headers[k] = v
 
-        if data is not None and old_data is not None:
-            data = jsonpatch.make_patch(old_data, data)
-
-        request = requests.request(verb, self.endpoint + path, params=params,
-                      headers=headers, data=data)
+        request = requests.request(
+                      verb,
+                      self.endpoint + path,
+                      params=params,
+                      headers=headers,
+                      data=payload)
 
         if request.status_code != 200:
             print(request.text)
@@ -52,17 +73,17 @@ class WikibaseRestAPI:
     def _get(self, path, params={}):
         return self._request("GET", path, params=params)
 
-    def _post(self, path, data):
-        return self._request("POST", path, data=data)
+    def _post(self, path, payload):
+        return self._request("POST", path, payload=payload)
 
-    def _put(self, path, data):
-        return self._request("PUT", path, data=data)
+    def _put(self, path, payload):
+        return self._request("PUT", path, payload=payload)
 
-    def _patch(self, path, data, old_data):
-        return self._request("PATCH", path, data=data, old_data=old_data)
+    def _patch(self, path, payload):
+        return self._request("PATCH", path, payload=payload)
 
     def _delete(self, path, data):
-        return self._request("DELETE", path, data=data)
+        return self._request("DELETE", path, payload=payload)
 
 
     # GET
@@ -86,20 +107,49 @@ class WikibaseRestAPI:
 
 
     # PATCH
-    def update_statement(self, statement_id, data, old_data):
-        return self._patch(f"/statements/{statement_id}", data, old_data)
+    def update_statement(self, statement_id, data, old_data, bot=False, edit_summary=None, tags=[]):
+        payload = _prepare_payload(
+                      "patch",
+                      "statement",
+                      data,
+                      old_data=old_data,
+                      bot=bot,
+                      edit_summary=edit_summary,
+                      tags=tags)
+        return self._patch(f"/statements/{statement_id}", payload)
 
 
     # POST
-    def add_statement(self, item_id, data):
-        return self._post(f"/entities/items/{item_id}/statements", data)
+    def add_statement(self, item_id, data, bot=False, edit_summary=None, tags=[]):
+        payload = _prepare_payload(
+                      "post",
+                      "statement",
+                      data,
+                      bot=bot,
+                      edit_summary=edit_summary,
+                      tags=tags)
+        return self._post(f"/entities/items/{item_id}/statements", payload)
 
 
     # PUT
-    def replace_statement(self, statement_id, data):
-        return self._put(f"/statements/{statement_id}", data)
+    def replace_statement(self, statement_id, data, bot=False, edit_summary=None, tags=[]):
+        payload = _prepare_payload(
+                      "put",
+                      "statement",
+                      data,
+                      bot=bot,
+                      edit_summary=edit_summary,
+                      tags=tags)
+        return self._put(f"/statements/{statement_id}", payload)
 
 
     # DELETE
-    def delete_statement(self, statement_id, data):
-        return self._delete(f"/statements/{statement_id}", data)
+    def delete_statement(self, statement_id, data, bot=False, edit_summary=None, tags=[]):
+        payload = _prepare_payload(
+                      "delete",
+                      "statement",
+                      data,
+                      bot=bot,
+                      edit_summary=edit_summary,
+                      tags=tags)
+        return self._delete(f"/statements/{statement_id}", payload)
