@@ -1,7 +1,7 @@
 import requests
+import jsonpatch
 
 wikidata_endpoint = "https://www.wikidata.org/w/rest.php/wikibase/v0"
-test_endpoint = "https://test.wikidata.org/w/rest.php/wikibase/v0"
 
 class WikibaseRestAPI:
     def get_access_token(self):
@@ -12,6 +12,7 @@ class WikibaseRestAPI:
 
         # Do the non-owner API rigamarole to get an access token from a key and
         # secret.
+
 
     def __init__(self, access_token=None, api_key=None, api_secret=None,
                  endpoint=wikidata_endpoint):
@@ -26,15 +27,20 @@ class WikibaseRestAPI:
         if self.access_token is not None:
             self.base_headers["Authorization"] = f"Bearer {self.access_token}"
 
-    def _request(self, verb, content, params={}, headers={}, data=None):
+
+    def _request(self, verb, path, params={}, headers={}, data=None, old_data=None):
         for k, v in self.base_headers.items():
             headers[k] = v
 
-        request = requests.request(verb, self.endpoint + content, params=params,
+        if data is not None and old_data is not None:
+            data = jsonpatch.make_patch(old_data, data)
+
+        request = requests.request(verb, self.endpoint + path, params=params,
                       headers=headers, data=data)
 
         if request.status_code != 200:
-            raise ResponseError
+            print(request.text)
+            raise Exception
 
         try:
             return request.json()
@@ -42,20 +48,22 @@ class WikibaseRestAPI:
             print(request.text)
             raise requests.exceptions.JSONDecodeError
 
-    def _get(self, content, params={}):
-        return self._request("GET", content, params=params)
 
-    def _post(self, content, data):
-        return self._request("POST", content, data=data)
+    def _get(self, path, params={}):
+        return self._request("GET", path, params=params)
 
-    def _put(self, content, data):
-        return self._request("PUT", content, data=data)
+    def _post(self, path, data):
+        return self._request("POST", path, data=data)
 
-    def _patch(self, content):
-        return self._request("PATCH", content, data=data)
+    def _put(self, path, data):
+        return self._request("PUT", path, data=data)
 
-    def _delete(self, content):
-        return self._request("DELETE", content, data=data)
+    def _patch(self, path, data, old_data):
+        return self._request("PATCH", path, data=data, old_data=old_data)
+
+    def _delete(self, path, data):
+        return self._request("DELETE", path, data=data)
+
 
     # GET
     def get_item(self, item_id):
@@ -76,51 +84,22 @@ class WikibaseRestAPI:
     def get_statement(self, statement_id):
         return self._get(f"/entities/statements/{statement_id}")
 
+
+    # PATCH
+    def update_statement(self, statement_id, data, old_data):
+        return self._patch(f"/statements/{statement_id}", data, old_data)
+
+
     # POST
     def add_statement(self, item_id, data):
-        return self._post("/entities/items/{item_id}/statements", data)
+        return self._post(f"/entities/items/{item_id}/statements", data)
+
 
     # PUT
     def replace_statement(self, statement_id, data):
         return self._put(f"/statements/{statement_id}", data)
 
-    # PATCH
-    def update_statement(self, statement_id, data):
-        return self._patch(f"/statements/{statement_id}", data)
 
     # DELETE
     def delete_statement(self, statement_id, data):
         return self._delete(f"/statements/{statement_id}", data)
-
-# Tests
-
-def test_create_apisession():
-    testobj = WikibaseRestAPI()
-    assert testobj.api_key == None
-    assert testobj.api_secret == None
-    assert testobj.endpoint == wikidata_endpoint
-    assert testobj.access_token == None
-    assert testobj.base_headers == {"Content-Type": "application/json"}
-    assert WikibaseRestAPI(endpoint=test_endpoint).endpoint == test_endpoint
-    assert WikibaseRestAPI(access_token="abcdefg").base_headers == {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer abcdefg"
-    }
-
-def test_getters():
-    testobj = WikibaseRestAPI(endpoint=test_endpoint)
-    request = requests.get(test_endpoint + "/entities/items/Q41487")
-    benchmark = request.json()
-    assert testobj.get_item("Q41487") == benchmark
-    assert testobj.get_item_labels("Q41487") == benchmark["labels"]
-    assert testobj.get_item_descriptions("Q41487") == benchmark["descriptions"]
-    assert testobj.get_item_aliases("Q41487") == benchmark["aliases"]
-    assert testobj.get_item_statements("Q41487") == benchmark["statements"]
-
-def run_tests():
-    test_create_apisession()
-    test_getters()
-    print("Tests complete.")
-
-if __name__ == "__main__":
-    run_tests()
