@@ -87,7 +87,7 @@ class WikibaseRestAPI:
     def _patch(self, path, payload):
         return self._request("patch", path, payload=payload)
 
-    def _delete(self, path, data):
+    def _delete(self, path, payload):
         return self._request("delete", path, payload=payload)
 
 
