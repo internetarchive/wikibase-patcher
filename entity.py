@@ -305,12 +305,9 @@ class Entity(Base):
         if self.connection is None:
             raise Exception("No Wikibase connection defined.")
         # Don't submit anything if no changes have been made
-        #print(self.original_data)
         if self.data == self.original_data:
             return
-        #if not isinstance(self.data, dict):
-        #    self.to_dict()
-        print(self.data)
+        print(json.dumps(self.data))
         if self.original_data is None:
             if self.data["type"] != "items":
                 raise RuntimeException("Creation of non-item entities not supported.")
