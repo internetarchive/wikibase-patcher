@@ -12,6 +12,10 @@ singular = {
 }
 
 def _prepare_payload(verb, part, new_data, old_data, bot, edit_summary, tags=[]):
+    payload = {
+        "tags": ["wikibase-patcher-v1"],
+        "bot": bot
+    }
     for tag in tags:
         payload["tags"].append(tag)
     if edit_summary is not None:
