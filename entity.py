@@ -310,7 +310,7 @@ class Entity(Base):
         print(json.dumps(self.data))
         if self.original_data is None:
             if self.data["type"] != "items":
-                raise RuntimeException("Creation of non-item entities not supported.")
+                raise RuntimeError("Creation of non-item entities not supported.")
             # Submit new item (only items supported)
             return self.connection.api.add_item(
                        self.data,

@@ -334,7 +334,7 @@ class WikibaseRestAPI:
         return self.update_entity_descriptions("items", item_id, data, old_data, bot, edit_summary, tags)
 
     def update_property_descriptions(self, property_id, data, old_data, bot=False, edit_summary=None, tags=[]):
-        return self.update_entity_descriptions("properties", item_id, data, old_data, bot, edit_summary, tags)
+        return self.update_entity_descriptions("properties", property_id, data, old_data, bot, edit_summary, tags)
 
     def update_item_aliases(self, item_id, data, old_data, bot=False, edit_summary=None, tags=[]):
         return self.update_entity_aliases("items", item_id, data, old_data, bot, edit_summary, tags)
@@ -352,7 +352,7 @@ class WikibaseRestAPI:
         return self.add_entity_label("items", item_id, data, bot, edit_summary, tags)
 
     def add_property_label(self, property_id, data, bot=False, edit_summary=None, tags=[]):
-        return self.add_entity_label("properties", item_id, data, bot, edit_summary, tags)
+        return self.add_entity_label("properties", property_id, data, bot, edit_summary, tags)
 
     def add_item_description(self, item_id, data, bot=False, edit_summary=None, tags=[]):
         return self.add_entity_description("items", item_id, data, bot, edit_summary, tags)
